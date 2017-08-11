@@ -9,15 +9,15 @@ First get Docker installed.  Here are the steps
 
 1. this step assumes your hosts are running Centos 7.x, and that there is no existing Docker Engine, etc installed. Also remove sudo if your running as root
 
-	$ sudo yum install -y yum-utils device-mapper-persistent-data lvm2
-	$ sudo yum-config-manager     --add-repo     https://download.docker.com/linux/centos/docker-ce.repo
-	$ sudo yum-config-manager --enable docker-ce-edge
-	$ sudo yum-config-manager --enable docker-ce-testing
-	$ sudo yum makecache fast
-	$ sudo yum install docker-ce -y
-	$ sudo systemctl enable docker
-	$ sudo systemctl start docker
-	$ sudo usermod -aG docker $USER
+$ sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+$ sudo yum-config-manager     --add-repo     https://download.docker.com/linux/centos/docker-ce.repo
+$ sudo yum-config-manager --enable docker-ce-edge
+$ sudo yum-config-manager --enable docker-ce-testing
+$ sudo yum makecache fast
+$ sudo yum install docker-ce -y
+$ sudo systemctl enable docker
+$ sudo systemctl start docker
+$ sudo usermod -aG docker $USER
 
 $ docker -v
 Docker version 17.06.0-ce, build 02c1d87
@@ -50,8 +50,15 @@ docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380
  -initial-cluster etcd1=http://10.0.0.1:2380,etcd2=http://10.0.0.2:2380 \
  -initial-cluster-state new
 
-Once I have 2 instances up and running 
+Try these commands on each AWS instnace to confirm that the etcd cluster is working properly
 
+$ curl -L http://127.0.0.1:2379/health    -   you should see a 'healthy' response
+
+$ curl -L http://127.0.0.1:2379/v2/members - you should see both of your etcd instances returned
+
+
+
+Once I have etcd up and running, I can begin the installation of px-dev software
 
 NOTE:  DO NOT mkfs or mount the newly created ram drives as done earlier.   
 
