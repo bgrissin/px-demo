@@ -1,62 +1,67 @@
 
-There is Portworx PX-Enterprise and Portworx PX-Dev, This demo uses the px-dev free option which allows me up to 3 nodes running px without running into licensing issues. Also this reference also uses Docker-CE 17.06.0-ce and uses a local etcd setup for running etcd keystore db.   
+Portworx offers Portworx PX-Enterprise and Portworx PX-Dev, This demo make use of the px-dev free option which allows me up run up to 3 nodes running px without running into licensing issues. Also this reference also uses Docker-CE 17.03-ce running Docker swarm mode, and uses a local 2.3.8 etcd setup for running keystore db.   
 
-First I provisioned 2 nodes on AWS running Ubuntu Centos 7.3.    I used the link below to support my configuring node requirements  necessary to run PX-Dev.
+First create 2 AWS t2.medium instances (I used the amazon provided free tier AMIs) on AWS, then create a security group along with an ssh key. Also add an EBS volume to each host (8GB will be fine for a demo)  The link below provides node requirements necessary to run PX-Dev.
 
-https://docs.portworx.com/scheduler/docker/install.html
+https://docs.portworx.com/scheduler/docker/docker-plugin.html
 
-First get Docker installed.  Here are the steps
+Onceyou have your instances up and running, ssh into both of your instances and install docker. (run as root or sudo each command)
 
-1. this step assumes your hosts are running Centos 7.x, and that there is no existing Docker Engine, etc installed. Also remove sudo if your running as root
+	$ yum update -y
+	$ yum install docker -y
+	$ service docker start 
+	$ usermod -aG docker ec2-user
 
-$ sudo yum install -y yum-utils device-mapper-persistent-data lvm2
-$ sudo yum-config-manager     --add-repo     https://download.docker.com/linux/centos/docker-ce.repo
-$ sudo yum-config-manager --enable docker-ce-edge
-$ sudo yum-config-manager --enable docker-ce-testing
-$ sudo yum makecache fast
-$ sudo yum install docker-ce -y
-$ sudo systemctl enable docker
-$ sudo systemctl start docker
-$ sudo usermod -aG docker $USER
-
-$ docker -v
+	$ docker -v
 Docker version 17.06.0-ce, build 02c1d87
+
+Now create a swarm cluster using the 2 AWS instances you just created. On the first AWS instance run this swarm init
+
+	$ docker swarm init
+Copy the output from your docker swarm init output provided to the other node and join that node to this master
+
+	$ docker swarm join --token SWMTKN-1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  <ip_addr of swarm master>:2377
+You should now be able to check the status of your swarm cluster from the first AWS node (Swarm manager)
+
+	$ docker node ls
+ 	 ID                           HOSTNAME       STATUS  AVAILABILITY  MANAGER STATUS
+ 	 ml1evr5m09gku3x7ettrctt98 *  ip-10-0-0-1     Ready   Active         Leader
+ 	 qerjcc498kx0i33oqg62mu1lk    ip-10-0-0-2     Ready   Active  
+
 
 2. Next, determine what etcd configuration you want.    If your into installing and maintaining etcd, then you should go for the local install. You can also run etcd within a container as shown in the example below.  You can also opt to run your etcd hosted, like up on compose.io.  They have a free 30 day trial, and its really simple and straightforward to setup.
 
 Local etcd running in containers:  
 
-docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 \
- --name etcd quay.io/coreos/etcd:v2.3.8 \
- -name etcd1 \
- -advertise-client-urls http://10.0.0.1:2379,http://10.0.0.1:4001 \
- -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \
- -initial-advertise-peer-urls http://10.0.0.1:2380 \
- -listen-peer-urls http://0.0.0.0:2380 \
- -initial-cluster-token test-cluster \
- -initial-cluster etcd1=http://10.0.0.1:2380,etcd2=http://10.0.0.2:2380 \
- -initial-cluster-state new
+	$ docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 \
+	 --name etcd quay.io/coreos/etcd:v2.3.8 \
+	 -name etcd1 \
+	 -advertise-client-urls http://10.0.0.1:2379,http://10.0.0.1:4001 \
+	 -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \
+	 -initial-advertise-peer-urls http://10.0.0.1:2380 \
+	 -listen-peer-urls http://0.0.0.0:2380 \
+	 -initial-cluster-token test-cluster \
+	 -initial-cluster etcd1=http://10.0.0.1:2380,etcd2=http://10.0.0.2:2380 \
+	 -initial-cluster-state new
 
 And on Node 2
 
-docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 \
- --name etcd quay.io/coreos/etcd:v2.3.8 \
- -name etcd2 \
- -advertise-client-urls http://10.0.0.2:2379,http://10.0.0.2:4001 \
- -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \
- -initial-advertise-peer-urls http://10.0.0.2:2380 \
- -listen-peer-urls http://0.0.0.0:2380 \
- -initial-cluster-token test-cluster \
- -initial-cluster etcd1=http://10.0.0.1:2380,etcd2=http://10.0.0.2:2380 \
- -initial-cluster-state new
+	$ docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 \
+	 --name etcd quay.io/coreos/etcd:v2.3.8 \
+	 -name etcd2 \
+	 -advertise-client-urls http://10.0.0.2:2379,http://10.0.0.2:4001 \
+	 -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \
+	 -initial-advertise-peer-urls http://10.0.0.2:2380 \
+	 -listen-peer-urls http://0.0.0.0:2380 \
+	 -initial-cluster-token test-cluster \
+	 -initial-cluster etcd1=http://10.0.0.1:2380,etcd2=http://10.0.0.2:2380 \
+	 -initial-cluster-state new
 
 Try these commands on each AWS instnace to confirm that the etcd cluster is working properly
 
-$ curl -L http://127.0.0.1:2379/health    -   you should see a 'healthy' response
+	$ curl -L http://127.0.0.1:2379/health    -   you should see a 'healthy' response
 
-$ curl -L http://127.0.0.1:2379/v2/members - you should see both of your etcd instances returned
-
-
+	$ curl -L http://127.0.0.1:2379/v2/members - you should see both of your etcd instances returned
 
 Once I have etcd up and running, I can begin the installation of px-dev software
 
