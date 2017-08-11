@@ -1,5 +1,5 @@
 
-There is Portworx PX-Enterprise and Portworx PX-Dev, I chose px-dev for the free option which allows me up to 3 nodes running px without running into licensing issues. Also this reference also uses Docker-CE 17.06.0-ce and uses a local etcd setup for running etcd keystore db.   
+There is Portworx PX-Enterprise and Portworx PX-Dev, This demo uses the px-dev free option which allows me up to 3 nodes running px without running into licensing issues. Also this reference also uses Docker-CE 17.06.0-ce and uses a local etcd setup for running etcd keystore db.   
 
 First I provisioned 2 nodes on AWS running Ubuntu Centos 7.3.    I used the link below to support my configuring node requirements  necessary to run PX-Dev.
 
@@ -29,26 +29,25 @@ Local etcd running in containers:
 docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 \
  --name etcd quay.io/coreos/etcd:v2.3.8 \
  -name etcd1 \
- -advertise-client-urls http://147.75.77.77:2379,http://147.75.77.77:4001 \
+ -advertise-client-urls http://10.0.0.1:2379,http://10.0.0.1:4001 \
  -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \
- -initial-advertise-peer-urls http://147.75.77.77:2380 \
+ -initial-advertise-peer-urls http://10.0.0.1:2380 \
  -listen-peer-urls http://0.0.0.0:2380 \
  -initial-cluster-token test-cluster \
- -initial-cluster etcd0=http://147.75.76.15:2380,etcd1=http://147.75.77.77:2380,etcd2=http://147.75.77.99:2380 \
+ -initial-cluster etcd1=http://10.0.0.1:2380,etcd2=http://10.0.0.2:2380 \
  -initial-cluster-state new
 
-
-
+And on Node 2
 
 docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 \
  --name etcd quay.io/coreos/etcd:v2.3.8 \
  -name etcd2 \
- -advertise-client-urls http://147.75.77.99:2379,http://147.75.77.99:4001 \
+ -advertise-client-urls http://10.0.0.2:2379,http://10.0.0.2:4001 \
  -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \
- -initial-advertise-peer-urls http://147.75.77.99:2380 \
+ -initial-advertise-peer-urls http://10.0.0.2:2380 \
  -listen-peer-urls http://0.0.0.0:2380 \
  -initial-cluster-token test-cluster \
- -initial-cluster etcd0=http://147.75.76.15:2380,etcd1=http://147.75.77.77:2380,etcd2=http://147.75.77.99:2380 \
+ -initial-cluster etcd1=http://10.0.0.1:2380,etcd2=http://10.0.0.2:2380 \
  -initial-cluster-state new
 
 
