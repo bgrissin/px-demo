@@ -1,12 +1,11 @@
 
-There is Portworx PX-Enterprise and Portworx PX-Dev, I chose px-dev for the free option which allows me up to 3 nodes running px without running into licensing issues. Also this reference also uses Docker-CE 17.06.0-ce and you choose how to setup and run your etcd keystore db.   I will provide some examples for both running a local etcd or running as a hosted etcd from compose.io
+There is Portworx PX-Enterprise and Portworx PX-Dev, I chose px-dev for the free option which allows me up to 3 nodes running px without running into licensing issues. Also this reference also uses Docker-CE 17.06.0-ce and uses a local etcd setup for running etcd keystore db.   
 
-
-First I provisioned 3 nodes on my local VirtualBox or AWS env running Ubuntu 16.04 or Centos 7.3.    I used the link below to support my configuring node requirements  necessary to run PX-Dev.
+First I provisioned 2 nodes on AWS running Ubuntu Centos 7.3.    I used the link below to support my configuring node requirements  necessary to run PX-Dev.
 
 https://docs.portworx.com/scheduler/docker/install.html
 
-First get Docker installed.  Here are the steps I took
+First get Docker installed.  Here are the steps
 
 1. this step assumes your hosts are running Centos 7.x, and that there is no existing Docker Engine, etc installed. Also remove sudo if your running as root
 
@@ -23,15 +22,34 @@ First get Docker installed.  Here are the steps I took
 # docker -v
 Docker version 17.06.0-ce, build 02c1d87
 
-The steps are different for installing Docker on Ubuntu 16.04
+2. Next, determine what etcd configuration you want.    If your into installing and maintaining etcd, then you should go for the local install. You can also run etcd within a container as shown in the example below.  You can also opt to run your etcd hosted, like up on compose.io.  They have a free 30 day trial, and its really simple and straightforward to setup.
 
-2. Next, determine what etcd configuration you want.   I provide the steps I took  and config examples for two ways to run etcd, but there are pros and cons for each way.  If your into installing and maintaining etcd, then you should go for the local install. You can also run etcd within a container or not, in my examples here I use the option to run etc within a container.  You can also opt to run your etcd hosted, like up on compose.io.  They have a free 30 day trial, and its really simple and straightforward to setup.
+Local etcd running in containers:  
 
-Local etcd running in containers:   -   There isn't a requirement that the Docker hosts be running in a cluster like swarm or K8S.  However, its probable that your setting up a container cluster to test and run workloads on, so then you would likely be running a cluster
+docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 \
+ --name etcd quay.io/coreos/etcd:v2.3.8 \
+ -name etcd1 \
+ -advertise-client-urls http://147.75.77.77:2379,http://147.75.77.77:4001 \
+ -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \
+ -initial-advertise-peer-urls http://147.75.77.77:2380 \
+ -listen-peer-urls http://0.0.0.0:2380 \
+ -initial-cluster-token test-cluster \
+ -initial-cluster etcd0=http://147.75.76.15:2380,etcd1=http://147.75.77.77:2380,etcd2=http://147.75.77.99:2380 \
+ -initial-cluster-state new
 
 
 
-Using a hosted etcd service (compose.io)
+
+docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 \
+ --name etcd quay.io/coreos/etcd:v2.3.8 \
+ -name etcd2 \
+ -advertise-client-urls http://147.75.77.99:2379,http://147.75.77.99:4001 \
+ -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \
+ -initial-advertise-peer-urls http://147.75.77.99:2380 \
+ -listen-peer-urls http://0.0.0.0:2380 \
+ -initial-cluster-token test-cluster \
+ -initial-cluster etcd0=http://147.75.76.15:2380,etcd1=http://147.75.77.77:2380,etcd2=http://147.75.77.99:2380 \
+ -initial-cluster-state new
 
 
 
@@ -127,7 +145,7 @@ root@node1:~# cat /etc/pwx/config.json
     ],
   "storage": {
     "devices": [
-      "/dev/ram0"
+      "/dev/xvdb"
     ]
   }
 }
