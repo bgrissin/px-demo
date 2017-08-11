@@ -9,17 +9,17 @@ First get Docker installed.  Here are the steps
 
 1. this step assumes your hosts are running Centos 7.x, and that there is no existing Docker Engine, etc installed. Also remove sudo if your running as root
 
-# sudo yum install -y yum-utils device-mapper-persistent-data lvm2
-# sudo yum-config-manager     --add-repo     https://download.docker.com/linux/centos/docker-ce.repo
-# sudo yum-config-manager --enable docker-ce-edge
-# sudo yum-config-manager --enable docker-ce-testing
-# sudo yum makecache fast
-# sudo yum install docker-ce -y
-# sudo systemctl enable docker
-# sudo systemctl start docker
-# sudo usermod -aG docker $USER
+	$ sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+	$ sudo yum-config-manager     --add-repo     https://download.docker.com/linux/centos/docker-ce.repo
+	$ sudo yum-config-manager --enable docker-ce-edge
+	$ sudo yum-config-manager --enable docker-ce-testing
+	$ sudo yum makecache fast
+	$ sudo yum install docker-ce -y
+	$ sudo systemctl enable docker
+	$ sudo systemctl start docker
+	$ sudo usermod -aG docker $USER
 
-# docker -v
+$ docker -v
 Docker version 17.06.0-ce, build 02c1d87
 
 2. Next, determine what etcd configuration you want.    If your into installing and maintaining etcd, then you should go for the local install. You can also run etcd within a container as shown in the example below.  You can also opt to run your etcd hosted, like up on compose.io.  They have a free 30 day trial, and its really simple and straightforward to setup.
